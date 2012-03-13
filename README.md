@@ -12,7 +12,7 @@ coord_util depends on my `tempfile_util` module.
 coord_util also depends on `numpy` (tested with 1.6.1).  
 
 coord_util contains a module for storing geometries in a useful
-database format.  In order to make use of this module, coord_util
+database format, `trajdb`.  In order to make use of this module, coord_util
 depends on the presence of `sqlite3` and `h5py`.
 
 Scripts for building all of the above dependencies in the user's home
@@ -65,29 +65,74 @@ get_atom_coords returns a 1x3 array containing the coordinates of the ith atom.
 center_of_geometry returns a 1x3 array containing the coordinates at
 the average of the atom coordinates in the system. 
 
- For instance, if the center of geometry of atoms arranged in the
-corners of a square is the center of the square:
+For instance, the center of geometry of atoms arranged at the corners
+of a square is the center of the square:
 
     center_of_geometry(np.array([0., 0., 0., 
                                  1., 0., 0.,
-				 0., 1., 0.,
-				 0., 0., 1.,]))
-				 == np.array([0.5, 0.5, 0.5])
+	                         0., 1., 0.,
+	                         0., 0., 1.,]))
+	                         == np.array([0.5, 0.5, 0.5])
 
 ##### rmsd
 
-rmsd returns the *least* root mean square distance between two
-geometries.
+`rmsd` is a slight misnomer, since rmsd is the *least* root mean
+square distance between two geometries.  However, the convention is to
+simply refer to this measure as rmsd. The root mean square distance
+between two geometries is simply the l2-norm of the difference vector,
+divided by the square root of the number of atoms:
+
+       rootmeansquare(v1, v2) == sqrt(dot(v1-v2, v1-v2)/(len(v1)/3)).
+
+The *least* root mean square is the least root mean square between the
+two vectors, amongst all possible rotations and translations of the
+geometry.  The intuition is that, for example, a water molecule is
+identical no matter how it's rotated or translated; only differences
+beyond rotation and translation are relevant.
+
+So,
+	rmsd(v1, v2) == rmsd(v1, translate(v2, anything))
+
+and
+
+	rmsd(v1, v2) == rmsd(v1, rotate(v2, anyangle)).
 
 
 ##### translate
+
+`translate` displaces all atoms in a geometry by a uniform vector; for
+example, if we translate a geometry via,
+
+	    translate(geom, delta_vector).
+
+Then, for any atom in the geometry
+
+    get_atom_coords(geom, idx) - get_atom_coords(translate(geom, delta_vector)), idx) == delta_vector.
+
 ##### dihedral
 
+`dihedral` calculates the dihedral angle between involving for atoms.  Example:
+
+	   dihedral(geom, idx, jdx, kdx, ldx)
+
 ##### atom_dist
+
+`atom_dist` calculates the distance between the idxth and jdxth atoms.  Example:
+
+	    atom_dist(geom, idx, jdx).
+
 ##### rotate_euler
+
+`rotate_euler` rotates the geometry about the origin according to the euler angles.  Example:
+
+	       rotate_euler(geom, alpha, beta, gamma).
+
+
 ##### transform
 
+`transform` applies a 3x3 transformation matrix to each atom in the geometry.  Example:
 
+	    transform(geom, euler_rotation_matrix(alpha, beta, gamma)).
 
 ## topology
 
