@@ -32,7 +32,8 @@ def rmsd_rotation(coordinates1, coordinates2):
             Vt[2, idx] = -Vt[2, idx]
 
     # Optimally align v and u.
-    return np.dot(Vt.transpose(), U.transpose()), 0
+    return np.dot(Vt.transpose(), U.transpose())
+
 
 
 def center_of_geometry(coordinates):
