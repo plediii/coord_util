@@ -82,7 +82,7 @@ simply refer to this measure as rmsd. The *non* least root mean square
 distance between two geometries is simply the l2-norm of the
 difference vector, divided by the square root of the number of atoms:
 
-       rootmeansquare(v1, v2) == sqrt(dot(v1-v2, v1-v2)/(len(v1)/3)).
+       flat_rmsd(v1, v2) == sqrt(dot(v1-v2, v1-v2)/(len(v1)/3)).
 
 The *least* root mean square is the least root mean square between the
 two vectors, amongst all possible rotations and translations of the
@@ -99,6 +99,16 @@ and
 
 	rmsd(v1, v2) == rmsd(v1, rotate(v2, anyangle)).
 
+
+##### align
+
+`align` transforms a geometry to minimize the `flat_rmsd` to another
+target geometry.  Explicitly:
+
+       rmsd(v1, v2) == flat_rmsd(v1, align(v1, v2)).
+
+Geometries can be aligned considering only subset of the coordinates
+using the `subalign` function and the `topology` module described below.
 
 ##### translate
 
@@ -305,6 +315,17 @@ Topology lifting considers only the names of atoms in molecules, so it
 can be used between Polymers with different names as long as the
 Molecules in the corresponding positions in the Polymer tree can be
 lifted to one another.
+
+### Aligning sub geometries
+
+A common procedure is to align a geometry so that a sub component is
+optimally aligned with the same component of another geometry.  This
+can be accomplished with the `subalign` function in the `coord_math`
+module.  For example, to align protein coordinates `y` to protein
+coordinates `x` along their backbone:
+
+	    backbone_top = top.regex_get_atoms('^(CA|CB|C|N|O)$')
+	    aligned_y = subalign(backbone_top, x, y)
 
 ## mol_reader/writer
 

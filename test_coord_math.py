@@ -274,8 +274,6 @@ class TestEulerRotation(unittest.TestCase):
         delta = np.abs(matrix - flip)
         self.assertTrue(delta.max() < 1e-5, "%s !=\n %s" % (matrix, flip))
 
-        
-
 class TestAtomDist(unittest.TestCase):
     
 
@@ -302,13 +300,18 @@ class TestAtomDist(unittest.TestCase):
 
             test_distance(mol, 0, 0, 0.)
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(CheckRMSD('test_general_rmsd'))
-    suite.addTest(CheckRMSD('test_distinguish_inversion'))
-    return suite
+
+class TestAlign(unittest.TestCase):
+    
+    def test_align_flat_rmsd(self):
+        for cout in xrange(20):
+            x = perturb(randomize_mol(methane))
+            y = perturb(randomize_mol(methane))
+            y = x.copy()
+
+            aligned_y = cm.align(x.copy(), y.copy())
+
+            self.assertAlmostEqual(cm.rmsd(x, y), cm.flat_rmsd(x, aligned_y), 5)
     
 if __name__ == "__main__":
-#     suite = suite()
-#     suite.debug()
     unittest.main()

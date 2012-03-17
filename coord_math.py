@@ -77,21 +77,17 @@ def rmsd(coordinates1, coordinates2):
 def translate(coordinates, translation_vector):
     """Translate each atom in  molecule by adding the translation vector."""
 
-    coords = coordinates.reshape((-1, 3))
+    coords = coordinates.reshape((-1, 3)).copy()
     for idx in xrange(len(coords)):
-        coords[idx] = tuple(coords[idx] + translation_vector)
+        coords[idx] = coords[idx] + translation_vector
 
     return coords.reshape((-1, ))
 
 def flat_rmsd(coordinates1, coordinates2):
     """Return unminimized rmsd."""
-
-    u = coordinates1.reshape((-1, 3))
-    v = coordinates2.reshape((-1, 3))
-
-    num_atoms = u.shape[0]
-    s = sum((np.linalg.norm(u[idx] - v[idx]) ** 2 for idx in xrange(num_atoms)))
-    return math.sqrt(s / num_atoms)
+    num_atoms = len(coordinates1)/3
+    delta= coordinates1 - coordinates2
+    return np.sqrt(np.dot(delta, delta)/num_atoms)
 
 
 
@@ -166,6 +162,40 @@ def transform(mol, transform_matrix):
 def rotate_euler(coords, alpha, beta=0.0, gamma=0.0):
     """Rotate the molecule around the origin according to Euler angles."""
     return transform(coords, euler_rotation_matrix(alpha, beta, gamma))
+
+
+def rmsd_align_transform(x, y):
+    """Return the t1, r, t2 (translation, rotation, translation) for y to minimize the flat_rmsd of y and x.
+
+    The flat_rmsd will be minimized by translating y by t1, rotating
+    by r, and translating by t2.
+
+    See the definition of align for use.
+
+    """
+
+    t1 = -center_of_geometry(y)
+    t2 = center_of_geometry(x)
+    r = rmsd_rotation(translate(x, -t2), translate(y, t1))
+
+    return t1, r, t2
+
+
+def align(x, y):
+    """Return y transformed to minimize flat_rmsd to x."""
+    t1, r, t2 = rmsd_align_transform(x, y)
+    return translate(transform(translate(y, t1), r), t2)
+
+
+def subalign(top, x, y):
+    """Align y to x according to the subtopology described by top.
+
+    top is expected to be a Topology class from the topology module.
+
+    """
+    t1, r, t2 = rmsd_align_transform(top.get_coords(x), top.get_coords(y))
+    return translate(transform(translate(y, t1), r), t2)
+    
 
 
 # Overwrite above definitions with a fast fortran implementation
