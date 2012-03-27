@@ -10,7 +10,7 @@ F2PY=f2py --fcompiler=$(F2PY_FC_NAME) --f90flags="$(FCFLAGS)" --arch="$(FC_ARCH_
 all: coord_math.o coord_math_f.so
 
 clean:
-	rm -f *.o *.so *.mod xdrfile/_libxdrfile.so
+	rm -f *.o *.so *.mod 
 
 %.o: %.f90
 	${FC} -c $< -o $@
