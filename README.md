@@ -19,25 +19,33 @@ Scripts for building all of the above dependencies in the user's home
 directory (and thus not requring root permissions) are available in my
 `build_scripts` repository.
 
-## Configure and Build
+## Installation
 
-Several geometry related functions included in coord_util have
-optimized versions written purely in fortran.  To use these efficient
-codes, it is necessary to compile and link with them using f2py (f2py
-is included in numpy).  When coord_util is not able to successfully
-link to these versions, a warning will be displayed, and coord_util
-will use the less efficient versions written in pure python.
+### Download
 
-The makefile will 
-Makefiles tailored to gfortran and ifort on the computers I used are
-available in the configuration directory.  The program `configure.py`
-will attempt to identify the best available compiler and link the
-appropriate makefile.  It should be possible to build 
+Clone `coord_util` into your python `site-packages` directory.
+
+      cd your_python_site-packages
+      git clone git@github.com:plediii/coord_util
+
+
+### Configure and Build
+
+This step is optional but recommended; all of the `coord_util`
+functions are pure python.  However, some functions have been
+implemented more efficiently in Fortran.  To access the more efficient
+versions configure and build the moules via:
 
 	./configure.py
 	make
 
 
+### Testing
+
+The `coord_util` package includes several test suites with names in
+the form `test_foo.py`.  To execute all of them:
+
+		./test.bash
 
 ### Modules
 
