@@ -1,19 +1,14 @@
-
-import numpy as np
-import topology as t
+"""File like interface for reading pdb coordinates."""
 
 import os
+import numpy as np
 
-# def is_multichain(pdb_file_name):
-#     with open(pdb_file_name) as pdb_file:
-#         for line in pdb_file:
-#             line_type = line[:6].strip()
-#             if line_type == 'TER':
-#                 return True
-#     return False
+import topology as t
+
+STDOPEN=open
 
 def read_topology_parts(pdb_file_name):
-    with open(pdb_file_name) as pdb_file:
+    with STDOPEN(pdb_file_name) as pdb_file:
         for line in pdb_file:
             line_type = line[:6].strip()
 
@@ -41,7 +36,6 @@ def read_residues(pdb_file_name):
 
     """
     atom_names = []
-    res_idcs_seen = set()
 
     last_resname = None
     last_res_idx = -1e100
@@ -64,7 +58,6 @@ def read_residues(pdb_file_name):
             yield last_resname, atom_names
 
             atom_names = []
-            res_idcs_seen.add(res_idx)
 
         atom_names.append(atom_name)
 
@@ -101,42 +94,10 @@ def read_topology(pdb_file_name, name=None):
     else:
         return t.Polymer(name, monomers)
 
-
-def read_coord_parts(pdb_file_name):
-    with open(pdb_file_name) as pdb_file:
-        for line in pdb_file:
-            line_type = line[:6].strip()
-
-            if line_type == 'ATOM' or line_type == 'HETATM':
-                x = float(line[30:38])
-                y = float(line[38:46])
-                z = float(line[46:54])
-
-                yield [x, y, z]
-
-            elif line_type == 'ENDMDL':
-                yield None
-
-
 def read_coords(pdb_file_name):
-
-    coords = []
-
-    for coord in read_coord_parts(pdb_file_name):
-        if coord is None:
-            if coords != []:
-                yield np.array(coords)
-                # print 'yield reset'
-                coords = []
-        else:
-            coords.extend(coord)
-
-    if coords != []:
-        yield np.array(coords)
-        # print 'yield final'
-
-    # print 'done'
-
+    with PDBFile(pdb_file_name) as f:
+        for coord in f:
+            yield coord
 
 class PDBError(Exception):
     pass
@@ -194,8 +155,69 @@ def coords_to_pdb(top, coords):
     else:
         raise Exception("Unrecognized Topology type.")
 
-def write_coords(pdb_file_name, top, coords_iter):
-    with open(pdb_file_name, 'w') as pdb_file:
-        for coords in coords_iter:
-            pdb_file.write(coords_to_pdb(top, coords))
-            pdb_file.write('\nENDMDL\n')
+def write_coords(pdb_file_name, topology, coords_iter):
+    with PDBFile(pdb_file_name, 'w', topology=topology) as f:
+        for coord in coords_iter:
+            f.write(coord)
+
+
+class PDBFile(object):
+
+    def __init__(self, name, mode='r', 
+                 topology=None):
+
+        available_modes = ['r', 'w', 'a']
+        if mode not in available_modes:
+            raise PDBError("Mode string must be one of %s" % (', '.join("'%s'" % mode for mode in available_modes)))
+
+        if mode=='w':
+            if topology is None:
+                raise PDBError("A topology is required to create a new PDB file.")
+            self.file = STDOPEN(name, mode)
+            self.topology = topology
+        else:
+            if topology is None:
+                topology = read_topology(name)
+            self.topology = topology
+            self.file = STDOPEN(name, mode)
+
+        self.name = name
+
+    def __enter__(self):
+        return self
+        
+    def __exit__(self, *args):
+        self.close()
+        return all(arg is None for arg in args)
+
+    def close(self):
+        self.file.close()
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        crds = []
+        f = self.file
+        while True:
+            line = f.next()
+            line_type = line[:6].strip()
+
+            if line_type == 'ATOM' or line_type == 'HETATM':
+                x = float(line[30:38])
+                y = float(line[38:46])
+                z = float(line[46:54])
+
+                crds.extend([x, y, z])
+
+            elif line_type == 'ENDMDL':
+                break
+        return crds
+
+    def read(self):
+        return list(self)
+
+    def write(self, x):
+        self.file.write(coords_to_pdb(self.topology, x) + '\nENDMDL\n')
+            
+open=PDBFile

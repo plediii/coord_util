@@ -145,7 +145,11 @@ class Topology(object):
 
 
     def get_coords(self, x):
-        return x[self.atom_offsets]
+        try:
+            return x[self.atom_offsets]
+        except TypeError:
+            x = np.array(x)
+            return x[self.atom_offsets]
 
 
     def set_coords(self, x, new_x):

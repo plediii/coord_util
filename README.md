@@ -176,9 +176,9 @@ of a PDB file, or by creating them manually.
 
 For example, to obtain the topology describing the model in  "protein.pdb":
 
-    import coord_util.pdb_topology as pt
+    import coord_util.pdb as p
     
-    top = pt.read_topology('protein.pdb')
+    top = p.read_topology('protein.pdb')
 
 
 Alternatively, specific topologies can be constructed manually.  For
@@ -222,7 +222,7 @@ Suppose we already have the topology in "protein.pdb", "top" from
 above.  The trajectory of geometries in the PDB file can be obtained
 via:
 
-	   xs = list(pt.read_coords('protein.pdb'))
+	   xs = list(p.read_coords('protein.pdb'))
 
 The coordinates of specific components of the geometry can be
 extracted by coupling a topology instance with the coordinate
@@ -329,24 +329,61 @@ coordinates `x` along their backbone:
 
 ## mol_reader/writer
 
-mol_reader is a generic interface for reading geometries from files.  It supports a number of formats.  
+The `coord_util` package includes reader modules for several
+coordinate formats. These reader modules provide an `open` function
+returning an iterator over the geometries in the file.  
 
-### AMBER formats
+### AMBER Formats
 
-mdcrd and rst
+#### mdcrd
 
-### pdb
+The `mdcrd` format requires the number of atoms in the geometry.
 
-### trr
+    import coord_util.mdcrd as mdcrd
 
-### gaussian
+    with mdcrd.open('ala.crd', num_atoms=22) as f:
+        for geom in f:
+	    print center_of_geometry(geom)
 
-### trajdb
+#### rst
 
-## geometry
+Example:
+
+
+	import coord_util.rst as rst
+
+	with rst.open('ala.rst') as f:
+	     for geom in f:
+	       	 print center_of_geometry(geom)
+
+
+### PDB Format
+
+Example:
+
+    import coord_util.pdb as pdb
+
+    with pdb.open('protein.pdb') as f:
+        for geom in f:
+	    print center_of_geometry(geom)
+	    
+
+### Gromacs Format
+
+#### gro
+
+The Gro format specifies coordinates in nanometers, but `coord_util`
+converts them to angstroms for consistency with the other formats.
+
+Example:
+
+    import coord_util.gro as gro
+
+    with gro.open('ala.gro') as f:
+        for geom in f:
+	    print center_of_geometry(geom)
 
 
 
-## trajdb
 
-## gnat
+

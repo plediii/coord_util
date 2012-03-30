@@ -6,10 +6,7 @@ import os
 import aminoacids as aa
 import static_files
 
-import pdb_topology as pt
-
-import tempfile_util as tfu
-
+import pdb as p
 
 
 test_file = static_files.static_file_func(__file__, 'test_data', 
@@ -30,7 +27,7 @@ class MonomerAtomsTestCase(unittest.TestCase):
     pdb_file = test_file('1xfq')
 
     def test_monomer_atoms(self):
-        top = pt.read_topology(self.pdb_file, name='top')
+        top = p.read_topology(self.pdb_file, name='top')
 
         # Make sure we have something non-trivial to test
         self.assertGreater(top.monomers[0].num_monomers, 50)
@@ -74,7 +71,7 @@ class TopologyTestCase(unittest.TestCase):
     residue_idcs = get_list(test_file('1xfq_idcs'))
 
     def test_get_topology(self):
-        top = pt.read_topology(self.pdb_file, 'PYP')
+        top = p.read_topology(self.pdb_file, 'PYP')
         
         # self.assertEqual(top.num_atoms, prmtop.get_num_atoms())
         self.assertEqual(top.name, 'PYP')
@@ -111,11 +108,11 @@ class ReadCoordsTestCase(unittest.TestCase):
     expected_coords = get_float_list(test_file('1xfq_coords'))
 
     def test_read_coords(self):
-        coords = pt.read_coords(self.pdb_file).next()
+        coords = p.read_coords(self.pdb_file).next()
         self.assertEqual(list(coords), list(self.expected_coords))
 
     def test_num_coords(self):
-        num_in_file = sum(1 for coords in pt.read_coords(self.pdb_file))
+        num_in_file = sum(1 for coords in p.read_coords(self.pdb_file))
 
         self.assertEqual(num_in_file, self.num_coords_in_file)
 
@@ -137,11 +134,11 @@ class ReadWriteCoordsTestCase(unittest.TestCase):
 
 
     def test_read_write_coords(self):
-        top = pt.read_topology(self.initial_pdb_file, name='pyp')
+        top = p.read_topology(self.initial_pdb_file, name='pyp')
 
-        pt.write_coords('test.pdb', top, pt.read_coords(self.initial_pdb_file))
+        p.write_coords('test.pdb', top, p.read_coords(self.initial_pdb_file))
 
-        for idx, (read_coords, expected_coords) in enumerate(zip(pt.read_coords('test.pdb'), pt.read_coords(self.initial_pdb_file))):
+        for idx, (read_coords, expected_coords) in enumerate(zip(p.read_coords('test.pdb'), p.read_coords(self.initial_pdb_file))):
             self.assertEqual(list(expected_coords), list(read_coords))
 
         
@@ -157,7 +154,7 @@ class TwoChainTopologyTestCase(unittest.TestCase):
 
 
     def test_get_topology(self):
-        top = pt.read_topology(self.pdb_file, name='two')
+        top = p.read_topology(self.pdb_file, name='two')
         
         # self.assertEqual(top.num_atoms, prmtop.get_num_atoms())
 
