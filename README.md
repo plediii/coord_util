@@ -25,9 +25,10 @@ directory (and thus not requring root permissions) are available in my
 
 Clone `coord_util` into your python `site-packages` directory.
 
+```bash
       cd your_python_site-packages
-      git clone git@github.com:plediii/coord_util
-
+      git clone git://github.com/plediii/coord_util
+```
 
 ### Configure and Build
 
@@ -36,8 +37,11 @@ functions are pure python.  However, some functions have been
 implemented more efficiently in Fortran.  To access the more efficient
 versions configure and build the moules via:
 
+
+```bash
 	./configure.py
 	make
+```
 
 
 ### Testing
@@ -45,7 +49,9 @@ versions configure and build the moules via:
 The `coord_util` package includes several test suites with names in
 the form `test_foo.py`.  To execute all of them:
 
+```bash
 		./test.bash
+```
 
 ### Modules
 
@@ -56,7 +62,9 @@ interpret one-dimensional numpy arrays holding contiguous sequence of
 atoms.  The arguments to the coord_math functions assume that the
 numpy arrays are in the order:
 
+```python
       x = np.array([x1, y1, z1, x2, y2, z2, ..., xn, yn, zn]),
+```
 
 where `x1` is the x coordinate of the first atom, `y2` is the y
 coordinate of the second atom, and `zn` is the z coordinate of the nth
@@ -66,7 +74,9 @@ the first atom has index 1.
 ##### get_atom_coords
 get_atom_coords returns a 1x3 array containing the coordinates of the ith atom.
 
+```python
 		get_atom_coords(np.array([1, 2, 3, 4, 5, 6]), 2) == np.array([4, 5, 6])
+```
 
 ##### center_of_geometry
 
@@ -76,11 +86,13 @@ the average of the atom coordinates in the system.
 For instance, the center of geometry of atoms arranged at the corners
 of a square is the center of the square:
 
+```python
     center_of_geometry(np.array([0., 0., 0., 
                                  1., 0., 0.,
 	                         0., 1., 0.,
 	                         0., 0., 1.,]))
 	                         == np.array([0.5, 0.5, 0.5])
+```
 
 ##### rmsd
 
@@ -90,7 +102,9 @@ simply refer to this measure as rmsd. The *non* least root mean square
 distance between two geometries is simply the l2-norm of the
 difference vector, divided by the square root of the number of atoms:
 
+```python
        flat_rmsd(v1, v2) == sqrt(dot(v1-v2, v1-v2)/(len(v1)/3)).
+```
 
 The *least* root mean square is the least root mean square between the
 two vectors, amongst all possible rotations and translations of the
@@ -101,11 +115,15 @@ translation are irrelevant to its dynamics.
 Since `rmsd` gives the least root mean square distance, we have, for
 example, that
 
+```python
 	rmsd(v1, v2) == rmsd(v1, translate(v2, anything))
+```
 
 and
 
+```python
 	rmsd(v1, v2) == rmsd(v1, rotate(v2, anyangle)).
+```
 
 
 ##### align
@@ -113,7 +131,9 @@ and
 `align` transforms a geometry to minimize the `flat_rmsd` to another
 target geometry.  Explicitly:
 
+```python
        rmsd(v1, v2) == flat_rmsd(v1, align(v1, v2)).
+```
 
 Geometries can be aligned considering only subset of the coordinates
 using the `subalign` function and the `topology` module described below.
@@ -123,36 +143,48 @@ using the `subalign` function and the `topology` module described below.
 `translate` displaces all atoms in a geometry by a uniform vector; for
 example, if we translate a geometry via,
 
+```python
 	    translate(geom, delta_vector).
+```
 
 Then, for any atom in the geometry
 
+```python
     get_atom_coords(geom, idx) - get_atom_coords(translate(geom, delta_vector)), idx) == delta_vector.
+```
 
 ##### dihedral
 
 `dihedral` calculates the dihedral angle between involving for atoms.  Example:
 
+```python
 	   dihedral(geom, idx, jdx, kdx, ldx)
+```
 
 ##### atom_dist
 
 `atom_dist` calculates the distance between the idxth and jdxth atoms.  Example:
 
+```python
 	    atom_dist(geom, idx, jdx).
+```
 
 ##### rotate_euler
 
 `rotate_euler` rotates the geometry about the origin according to the euler angles.  Example:
 
+```python
 	       rotate_euler(geom, alpha, beta, gamma).
+```
 
 
 ##### transform
 
 `transform` applies a 3x3 transformation matrix to each atom in the geometry.  Example:
 
+```python
 	    transform(geom, euler_rotation_matrix(alpha, beta, gamma)).
+```
 
 ## topology
 
@@ -184,41 +216,53 @@ of a PDB file, or by creating them manually.
 
 For example, to obtain the topology describing the model in  "protein.pdb":
 
+```python
     import coord_util.pdb as p
     
     top = p.read_topology('protein.pdb')
+```
 
 
 Alternatively, specific topologies can be constructed manually.  For
 instance, we can construct a toplogy for a glycine residue, or a water
 molecule:
 
+```python
 	import topology as t
 
 	gly = t.Molecule('GLY', ['N', 'CA', 'C', 'O'])
 	water = t.Molecule('HOH', ['H', 'O', 'H'])
+```
 
 Individual molecules can be composed to create polymers.  A glycine dipeptide can be constructed via:
 
+```python
 	   digly = t.Polymer('GLYGLY', [gly, gly])
+```
 
 Polymers can be composed with water molecules to create a dipeptide solvated in 100 water molecules:
 
+```python
 	 system = t.Polymer('solvagted gly', [digly] + [water] * 100)
+```
 
 Alternatively, chains can be constructed by creating a monomer set, and using its sequence method.
 
+```python
 	ala = t.Molecule('ALA', ['N', 'CA', 'CB', 'C', 'O'])
 
 	  monomers = t.Monomers([gly, ala])
 
 	  gly_ala_gly = t.Polymer('GLYALAGLY', monomers.sequence(['GLY', 'ALA', 'GLY']))
+```
 
 The `coord_util` project includes a module `aminoacids` with the standard set of aminoacids:
 
+```python
     from aminoacids import aminoacids
 
     gly_ala_gly = aminoacids.sequence(['ALA', 'GLY', 'ALA'])
+```
 
 	  
 ### Selecting and extracting substructures
@@ -230,7 +274,9 @@ Suppose we already have the topology in "protein.pdb", "top" from
 above.  The trajectory of geometries in the PDB file can be obtained
 via:
 
+```python
 	   xs = list(p.read_coords('protein.pdb'))
+```
 
 The coordinates of specific components of the geometry can be
 extracted by coupling a topology instance with the coordinate
@@ -240,8 +286,10 @@ we can use the `Topolgy.get_atoms` method to create a subtopology, and
 a numpy array:
 
 
+```python
       ca_top = top.get_atoms('CA')
       ca_xs = [ca_top.get_coords(x) for x in xs]
+```
 	   
 
 After the above, assuming the protein consists of N residues with CA
@@ -251,13 +299,16 @@ the coordinates of the CA atoms.
 Alternatively, we could extract just the backbone of the geometry
 using the `Topology.get_atomset` method:
 
-
+```python
 	       backbone_top = top.get_atomset(['CA', 'CB', 'C', 'N', 'O'])
+```
 
 Atoms can also be selected with regular expressions (regex).  We could
 have selected the backbone atoms using a regex instead:
 
+```python
 	       backbone_top = top.regex_get_atoms('^(CA|CB|C|N|O)$')
+```
 
 We could also select for specific monomers by name using
 `Polymer.get_monomer(resname)`, `Polymer.monomers_slice(idx, jdx)` and
@@ -273,14 +324,18 @@ implemented by the `Topology.set_coords` method.
 
 For instance, suppose we have the subtopology for the first monomer in a Polymer:
 
+```python
     first = top.get_monomer_by_index(0).
+```
 
 If `x` is an numpy array of length 3N (corresponding to the N atoms
 described by `top`), and `x1` is a numpy array of length 3M
 (corresponding to the M atoms of the first residue), we can change the
 geometry of the first residue to that of `x1` by
 
+```python
 	 first.set_coords(x, x1).
+```
 
 
 ### Lifting and reordering atoms
@@ -294,9 +349,11 @@ entire geometry, with the CA atoms already filled in using
 `Topology.lift_coords` like so:
 
 
+```python
 		       lift_ca = top.lift_coords(top.get_atoms('CA'))
 		       
 		       full_x = lift_ca.lift_coords(ca_x)
+```
 
 Then, assuming `ca_x` is a numpy array of length 3M corresponding to
 the M CA atoms, `full_x` will be a numpy array of length 3N
@@ -311,8 +368,10 @@ different order.  Additionally, suppose `x2` contains a geometry for
 the atoms in the order of `top2`.  Then we can change order of the
 atoms to that of `top` via:
 
+```python
       top_lift_top2 = top.lift_topology(top2, reorder=True)
       x = top_lift_top2.lift_coords(x2)
+```
 
 The extra argument to `lift_topology`, `reorder`, is not strictly
 necessary, but it dictates that `lift_topology` should raise an
@@ -332,8 +391,10 @@ can be accomplished with the `subalign` function in the `coord_math`
 module.  For example, to align protein coordinates `y` to protein
 coordinates `x` along their backbone:
 
+```python
 	    backbone_top = top.regex_get_atoms('^(CA|CB|C|N|O)$')
 	    aligned_y = subalign(backbone_top, x, y)
+```	    
 
 ## mol_reader/writer
 
@@ -347,33 +408,39 @@ returning an iterator over the geometries in the file.
 
 The `mdcrd` format requires the number of atoms in the geometry.
 
+```python
     import coord_util.mdcrd as mdcrd
 
     with mdcrd.open('ala.crd', num_atoms=22) as f:
         for geom in f:
 	    print center_of_geometry(geom)
+```
 
 #### rst
 
 Example:
 
 
+```python
 	import coord_util.rst as rst
 
 	with rst.open('ala.rst') as f:
 	     for geom in f:
 	       	 print center_of_geometry(geom)
+```
 
 
 ### PDB Format
 
 Example:
 
+```python
     import coord_util.pdb as pdb
 
     with pdb.open('protein.pdb') as f:
         for geom in f:
 	    print center_of_geometry(geom)
+```
 	    
 
 ### Gromacs Format
@@ -385,11 +452,13 @@ converts them to angstroms for consistency with the other formats.
 
 Example:
 
+```python
     import coord_util.gro as gro
 
     with gro.open('ala.gro') as f:
         for geom in f:
 	    print center_of_geometry(geom)
+```
 
 
 
