@@ -463,4 +463,189 @@ Example:
 
 
 
+## trajdb
+
+`coord_util` includes a module for storing molecular dynamics
+trajectories in a convenient database format.  The purpose of `trajdb`
+is to associate snapshots molecular dynamics trajectories with a
+collection of all relevant real valued physical properties in an
+efficient and easily queried pair of files.  A `trajdb` consists of an
+`sqlite` and `hdf5` database comprising the trajectories and physical
+properties.
+
+This module requires `sqlite3` and `h5py` python modules.
+
+
+### Opening and creating trajdbs
+
+#### Opening an existing trajdb
+
+An existing trajdb named `mytraj.db` can be opened via:
+
+```python
+	import coord_util.trajdb as trajdb
+
+	db = trajdb.open_trajectory_database('mytraj.db', create=False)
+```
+
+The optional `create` argument being set to `False` will cause an
+exception to be raised if the file does not exist.
+
+#### Creating a new trajdb
+
+A new trajdb named `mytraj.db` for geometries with `ndof` degrees of
+freedom (e.g., water molecules have 3*3=6 degrees of freedom) can be
+created via:
+
+```python
+	import coord_util.trajdb as trajdb
+
+	db = trajdb.open_trajectory_database('mytraj.db', ndof=ndof, create=True)
+```
+
+The optional `create` argument being set to `True` will cause `trajdb`
+to overwrite any previously existing database.
+
+The `ndof` argument is required when creating a new database.
+
+### Adding and retrieving samples
+
+#### New trajectory insertion
+
+Suppose we have an iterator `traj_iter`, which yields numpy vectors of
+molecule geometries representing snapshots from a trajectory with
+timestep `dt` (with initial time 0).  This sequence can be inserted
+into the `trajdb` stored referenced by `db` via:
+
+```python
+
+  with db.session():
+    for x in traj_iter:
+      samplekey = db.new_sample(x)
+      db.step_time(dt)
+
+  db.close()
+```
+
+The samplekey returned by `new_sample` is a unique identifier
+representing the geometry in the database.  
+
+The `session` ensures that the SQL database is only modified if all of
+the samles are successfully inserted.  The `close` function ensures
+that the samples are written to the `hdf5` database.
+
+#### Multiple trajectory insertion
+
+It is possible to denote that samples in the `trajdb` come from
+multiple independent trajectories by using the `new_trajectory` and
+`switch_trajectory` functions.  Suppose `traj_iters` is an iterator of
+trajectory iterators.  Then the following will insert multiple
+trajectories each with initial time 0 and time step `dt`.
+
+
+```python
+  with db.session():
+    for traj_iter in traj_iters:
+      trajkey = db.new_trajectory()
+      for x in traj_iter:
+        samplekey = db.new_sample(x)
+        db.step_time(dt)
+
+  db.close()
+```
+
+The `trajkey` returned from `new_trajectory` is a unique identifier
+representing the trajectory in the database.
+
+Alternatively, a previous inserted trajectory can be "resumed" by
+calling `db.switch_trajectory` with an existing `trajkey`.
+
+#### Sample retrieval
+
+Geometries inserted into a `trajdb` can be retrieved as long as the
+hdf5 database is present, and the samplekey of the desired geometry is
+known.  The geometry associated with a given samplekey can be
+retrieved via `get_sample` such as:
+
+
+```python
+  x = db.get_sample(samplekey)
+```
+
+Then `x` will be a numpy array holding the geometry of the
+`samplekey`th geometry.  All the samplekeys for the database can be
+retrieved by the `select` function (described in more detail below):
+
+```python
+  for samplekey in db.select(db.samplekeys.samplekey):
+    x = db.get_sample(samplekey)
+    print 'Sample %s is %s % (samplekey, x)
+```
+
+To simply iterate over the trajectories (in samplekey order), use the
+`db.iter_coordinates` function.  The previous example is equivalent to
+the following:
+
+```python
+  for samplekey, x in db.iter_coordinates():
+    print 'Sample %s is %s % (samplekey, x)
+```
+
+### Adding physical properties 
+
+In the most common case, molecule samples are described through a
+smaller set (i.e., smaller than the number of degrees of freedom) of
+real valued functions of the complete geometry.  Examples of such
+functions are dihedral angles, bond lengths, or rmsd from a specific
+geometry. 
+
+The `trajdb` module provides functions to associate real valued
+properties to the samplekeys describing the geometries in the
+database, and to query the database for based on these properties.
+
+The physical properties for a trajdb can be queried without the
+presence of the (often much larger) full geometries (in the hdf5
+database).
+
+#### Adding new physical properties
+
+Suppose we want to describe molecules by the dihedral involving atoms
+1, 2, 3 and 4; named psi.  This attribute can be done in the following
+way:
+
+```python
+  def psis():
+
+    for samplekey, x in db.iter_coordinates():
+      yield samplekey, dihedral(x, 1, 2, 3, 4)
+
+
+  db.add_sample_table('psi')  
+  # the above adds the attribute psi to `db`
+
+  db.insert(db.psi, psis())
+```
+  
+### Retrieving physical properties
+
+By default, time and trajectory keys are associated with each sample.
+We can select these values, along with any additional properties in
+the following way:
+
+```python
+
+   for row in db.select([db.trajectories.trajectorykey, db.times.time, db.psis.value]):
+     print 'Trajectory %d at time %f had psi=%f' % row
+````
+
+
+### Selecting properties by range
+
+To restrict the samples selected, the `select` function includes a where keyword:
+```python
+
+   for row in db.select([db.trajectories.trajectorykey, db.times.time], 
+                        where=((db.psis.value>0.)&(db.psis.value<3.14/2))):
+     print 'Trajectory %d at time %f had psi between 0 and pi/2' % row
+````
 
