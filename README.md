@@ -647,5 +647,5 @@ To restrict the samples selected, the `select` function includes a where keyword
    for row in db.select([db.trajectories.trajectorykey, db.times.time], 
                         where=((db.psis.value>0.)&(db.psis.value<3.14/2))):
      print 'Trajectory %d at time %f had psi between 0 and pi/2' % row
-````
+```
 
