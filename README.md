@@ -642,6 +642,7 @@ the following way:
 ### Selecting properties by range
 
 To restrict the samples selected, the `select` function includes a where keyword:
+
 ```python
 
    for row in db.select([db.trajectories.trajectorykey, db.times.time], 
