@@ -90,8 +90,8 @@ of a square is the center of the square:
     center_of_geometry(np.array([0., 0., 0., 
                                  1., 0., 0.,
 	                         0., 1., 0.,
-	                         0., 0., 1.,]))
-	                         == np.array([0.5, 0.5, 0.5])
+	                         1., 1., 0.,]))
+	                         == np.array([0.5, 0.5, 0.0])
 ```
 
 ##### rmsd
