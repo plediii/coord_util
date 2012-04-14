@@ -427,6 +427,11 @@ class TrajectoryDatabase(DatabaseMixin):
             yield row
 
 
+    def iter_samplekeys(self):
+        for key, in self.select([self.samplekeys.samplekey]):
+            yield key
+
+
 open_trajectory_database=TrajectoryDatabase
 
     
