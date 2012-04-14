@@ -577,7 +577,7 @@ Then `x` will be a numpy array holding the geometry of the
 retrieved by the `select` function (described in more detail below):
 
 ```python
-  for samplekey in db.select(db.samplekeys.samplekey):
+  for samplekey in db.select([db.samplekeys.samplekey]):
     x = db.get_sample(samplekey)
     print 'Sample %s is %s % (samplekey, x)
 ```
@@ -648,5 +648,63 @@ To restrict the samples selected, the `select` function includes a where keyword
    for row in db.select([db.trajectories.trajectorykey, db.times.time], 
                         where=((db.psis.value>0.)&(db.psis.value<3.14/2))):
      print 'Trajectory %d at time %f had psi between 0 and pi/2' % row
+```
+
+## GNAT
+
+The `coord_util` module includes efficient functions for searching for
+nearest neighbors in a set of numpy arrays.  The code is the Geometric
+Near-neighbor Access Tree (GNAT), and closely follows the strategy
+outlined by Brin (infolab.standford.edu/~sergey/near.html). 
+
+'Nearest' in this context refers to any metric, but the `gnat` code
+defaults to `rmsd`.
+
+This GNAT library is designed to work with a trajdb, but can easily be
+freed from this constraint (see test_gnat.py).
+
+### Building
+
+Assuming `db` is a `tradb`, we can build a GNAT indexing the
+structures via 
+
+```python
+  import coord_util.gnat as g
+
+  gnat = g.build_gnat(db)
+```
+
+### Searching
+
+Given a sample `x`, the samplekeys of all neighbors closer than `r`
+according to the metric can be obtained using the `query` function.
+
+
+```python
+  for samplekey in gnat.query(x, r):
+    print 'Sample %d is closer than %f' % (samplekey, r)
+```
+
+The nearest neighbor can be identified by the `neighbor_query` function:
+
+```python
+  print 'The nearest neighbor is sample %d' % (g.neighbor_query(x)[0])
+```
+
+### Saving/Loading
+
+A GNAT would not be very useful if we had to recreate the structure
+everytime we wanted to do queries.  The GNAT can be saved to the
+`trajdb` by using the `gnat` module's `save_gnat` function.
+
+```python
+  g.save_gnat(gnat)
+```
+
+The GNAT stored in the `trajdb` can be restored via the `load_gnat`
+function.
+
+```python
+  restored_gnat = g.load_gnat(db)
 ```
 
